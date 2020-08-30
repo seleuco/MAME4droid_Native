@@ -1,0 +1,3 @@
+install mingw
+build from msys
+configure ndk in makefile (use gcc since clang makes some drivers fail)
