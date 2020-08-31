@@ -11,6 +11,7 @@
 
 #http://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
 
+
 OSD = droid-ios
 #OSD = osdmini
 #OSD = sdl
@@ -18,56 +19,53 @@ OSD = droid-ios
 #TARGETOS= win32
 NOWERROR = 1
 
-TARGETOS=unix
-PTR64 = 1
-
 SUBTARGET = tiny
+
+CROSS_BUILD = 1
+
+#OPTIMIZE = 3
+#OPTIMIZE = 1
 
 ############ ANDROID
 
 ANDROID = 1
 
-#AMIPS=1
-
-#AX86=1
-
-#AARMV6=1
-
 #AARMV7=1
 
 AARMV8=1
 
+#AX86=1
+
+#CLANG = 1
+
+#BUILDMYTOOLS = 1
+#para compilar las herramientas. make buildtools
+ifdef BUILDMYTOOLS
+CROSS_BUILD =
+TARGETOS=win32
+BUILD_ZLIB = 1
+ANDROID =
+OSD = osdmini
+SUBTARGET =
+endif
+
 ################
 
-CROSS_BUILD = 1
-
-#TARGETOS = android
-#PTR64 = 0
+ifdef ANDROID
 
 X86_MIPS3_DRC =
 X86_PPC_DRC =
 FORCE_DRC_C_BACKEND = 1
 
-#OPTIMIZE = 1
-
-ifdef ANDROID
-
-ifdef AMIPS
-MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8-mips/bin/mipsel-linux-android-
-BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8-mips/sysroot
-endif
+TARGETOS=unix
 
 ifdef AX86
 MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8-x86/bin/i686-android-linux-
 BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8-x86/sysroot
 endif
 
-ifdef AARMV6
-MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8/bin/arm-linux-androideabi-
-BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8/sysroot
-endif
-
 ifdef AARMV7
+PTR64 = 0
 #MYPREFIX=/home/david/Projects/android/my-android-toolchain-r10c-18/bin/arm-linux-androideabi-
 MYPREFIX=
 #MYPREFIX=/home/david/Projects/android/my-android-toolchain-r9-18/bin/
@@ -78,19 +76,14 @@ ifdef AARMV8
 PTR64 = 1
 
 #MYPREFIX=/home/david/Projects/android/my-android-toolchain-r10c-21-arm64/bin/aarch64-linux-android-
-#MYPREFIX=C:\Android\my-android-toolchain-r10\bin\aarch64-linux-android-
 #MYPREFIX=/C/Android/my-android-toolchain-r10/bin/aarch64-linux-android-
-#MYPREFIX=C:\Android\android-ndk-r21b\toolchains\llvm\prebuilt\windows-x86_64\bin
-#MYPREFIX=/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android21-
-MYPREFIX=/C/Android/toolchain-r16b-arm64/bin/aarch64-linux-android-
+MYPREFIX=/C/Android/toolchain-r17c-arm64/bin/aarch64-linux-android-
+#MYPREFIX=/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android
 
 #BASE_DEV=/home/david/Projects/android/my-android-toolchain-r10c-21-arm64/sysroot
-#BASE_DEV=C:\Android\my-android-toolchain-r10\sysroot
 #BASE_DEV=/C/Android/my-android-toolchain-r10/sysroot
 endif
 
-#MYPREFIX=/home/david/Projects/android/my-android-toolchain-14-crystax/bin/arm-linux-androideabi-
-#BASE_DEV=/home/david/Projects/android/my-android-toolchain-14-crystax/sysroot
 
 endif
 
@@ -354,28 +347,24 @@ endif
 
 # compiler, linker and utilities
 
-AR = @$(MYPREFIX)ar
+
 #AR = @/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android-ar
 
-ifdef AARMV7
-#CC = @$(MYPREFIX)gcc-4.6
-CC = @$(MYPREFIX)gcc
-#CC = @$(MYPREFIX)g++
+ifdef CLANG
+#CC = @$(MYPREFIX)clang
+#LD = @$(MYPREFIX)clang++
+#AR = @$(MYPREFIX)ar
+CC = @$(MYPREFIX)27-clang
+LD = @$(MYPREFIX)27-clang++
+AR = @$(MYPREFIX)-ar
 else
 CC = @$(MYPREFIX)gcc
-#CC = @$(MYPREFIX)clang
-#CC = @$(MYPREFIX)clang++
+LD = @$(MYPREFIX)g++
+AR = @$(MYPREFIX)ar
 endif
-#LD = @$(MYPREFIX)g++
-
-#AR = @$(MYPREFIX)clang
-#CC = @$(MYPREFIX)clang
-LD = @$(MYPREFIX)clang++
-
 
 MD = -mkdir$(EXE)
 RM = @rm -f
-
 
 OBJDUMP = @objdump
 
@@ -568,7 +557,6 @@ COBJFLAGS += \
 # include paths
 #-------------------------------------------------
 
-#CCOMFLAGS +=  -I/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.2.sdk/usr/include
 
 # add core include paths
 CCOMFLAGS += \
@@ -691,7 +679,7 @@ SOFTFLOAT = $(OBJ)/libsoftfloat.a
 HQX = $(OBJ)/libhqx.a
 
 ifdef ANDROID
-#####CCOMFLAGS += --sysroot $(BASE_DEV)
+#CCOMFLAGS += --sysroot $(BASE_DEV) #si necesitamos meter el platform a pelo en lugar de toolchain
 CCOMFLAGS += -DANDROID
 CCOMFLAGS += -fpic
 
@@ -714,11 +702,6 @@ LDFLAGS += -march=armv7-a -Wl,--fix-cortex-a8
 CCOMFLAGS += -ffast-math
 endif
 
-ifdef AARMV6
-CCOMFLAGS += -mthumb
-LDFLAGS += -Wl,--fix-cortex-a8
-endif
-
 ifdef AARMV8
 CCOMFLAGS += -fPIC
 CCOMFLAGS += -DLSB_FIRST
@@ -728,7 +711,6 @@ CCOMFLAGS += -DLSB_FIRST
 #CCOMFLAGS += -fweb -frename-registers -fsingle-precision-constant
 #CCOMFLAGS += -fno-merge-constants
 
-CCOMFLAGS += -Wno-unused-but-set-variable
 CCOMFLAGS += -Wno-narrowing
 
 CCOMFLAGS += -march=armv8-a 
@@ -742,27 +724,30 @@ endif
 
 #Para quitar warning de CLANG
 #NOTA: CLANG da problemas con los drivers de Nanco,namcos11c (Xevious 3d y tekken 1 y2). Usar GCC hasta revisar warnings!
-# CCOMFLAGS += -Wno-sizeof-pointer-memaccess
-# CCOMFLAGS += -Wno-constant-logical-operand
-# CCOMFLAGS += -Wno-literal-conversion
-# CCOMFLAGS += -Wno-tautological-compare
-# CCOMFLAGS += -Wno-inline-new-delete
-# CCOMFLAGS += -Wno-unused-const-variable
-# CCOMFLAGS += -Wno-unused-function
-# CCOMFLAGS += -Wno-absolute-value
-# CCOMFLAGS += -Wno-shift-negative-value
-# CCOMFLAGS += -Wno-array-bounds
-# CCOMFLAGS += -Wno-parentheses-equality
-# CCOMFLAGS += -Wno-logical-not-parentheses
-# CCOMFLAGS += -Wno-self-assign
-# CCOMFLAGS += -Wno-string-plus-int
-# CCOMFLAGS += -Wno-constant-conversion
-# CCOMFLAGS += -Wno-overloaded-virtual
-# CCOMFLAGS += -Wno-shift-count-overflow
-# CCOMFLAGS += -Wno-pointer-bool-conversion
-# CCOMFLAGS += -Wno-int-to-pointer-cast
-# CCOMFLAGS += -Wno-unused-private-field
-
+ifdef CLANG
+CCOMFLAGS += -Wno-sizeof-pointer-memaccess
+CCOMFLAGS += -Wno-constant-logical-operand
+CCOMFLAGS += -Wno-literal-conversion
+CCOMFLAGS += -Wno-tautological-compare
+CCOMFLAGS += -Wno-inline-new-delete
+CCOMFLAGS += -Wno-unused-const-variable
+CCOMFLAGS += -Wno-unused-function
+CCOMFLAGS += -Wno-absolute-value
+CCOMFLAGS += -Wno-shift-negative-value
+CCOMFLAGS += -Wno-array-bounds
+CCOMFLAGS += -Wno-parentheses-equality
+CCOMFLAGS += -Wno-logical-not-parentheses
+CCOMFLAGS += -Wno-self-assign
+CCOMFLAGS += -Wno-string-plus-int
+CCOMFLAGS += -Wno-constant-conversion
+CCOMFLAGS += -Wno-overloaded-virtual
+CCOMFLAGS += -Wno-shift-count-overflow
+CCOMFLAGS += -Wno-pointer-bool-conversion
+CCOMFLAGS += -Wno-int-to-pointer-cast
+CCOMFLAGS += -Wno-unused-private-field
+else
+CCOMFLAGS += -Wno-unused-but-set-variable
+endif
 
 
 #GCC
@@ -772,7 +757,8 @@ CCOMFLAGS += -Wno-sign-compare
 LDFLAGS += -llog -lgcc -lOpenSLES
 LDFLAGS += -Wl,-soname,libMAME4droid.so -shared
 LDFLAGS += -lc -lm 
-#LDFLAGS += -Wl,--no-undefined #Para ver referencias no linkadas!
+#Activar para ver referencias no linkadas en GCC!
+#LDFLAGS += -Wl,--no-undefined 
 
 #CCOMFLAGS += -fsigned-char -finline  
 
@@ -813,7 +799,13 @@ all: default
 
 BUILDSRC = $(SRC)/build
 BUILDOBJ = $(OBJ)/build
+ifdef BUILDMYTOOLS
+BUILDOUT = prec-build
+else
 BUILDOUT = $(BUILDOBJ)
+endif
+
+
 
 
 
@@ -919,7 +911,6 @@ $(VERSIONOBJ): $(DRVLIBS) $(OSDOBJS) $(LIBCPU) $(LIBEMU) $(LIBSOUND) $(LIBUTIL) 
 
 #$(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(LIBOSD) $(LIBCPU) $(LIBEMU) $(LIBDASM) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(SOFTFLOAT) $(HQX) $(LIBOCORE) $(RESFILE)
 #$(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(OSDOBJS) $(CPUOBJS) $(LIBEMUOBJS) $(DASMOBJS) $(SOUNDOBJS) $(UTILOBJS) $(EXPATOBJS) $(SOFTFLOATOBJS) $(HQXOBJS) $(OSDCOREOBJS) $(RESFILE)
-#$(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(OSDOBJS) $(LIBCPU) $(LIBEMU) $(LIBDASM) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(SOFTFLOAT) $(HQX) $(LIBOCORE) $(RESFILE)
 $(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(OSDOBJS) $(LIBCPU) $(LIBEMU) $(LIBDASM) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(SOFTFLOAT) $(HQX) $(LIBOCORE) $(RESFILE)
 	@echo Linking $@...
 	$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $^ $(LIBS) -o $@
