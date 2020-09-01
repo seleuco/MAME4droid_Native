@@ -19,7 +19,7 @@ OSD = droid-ios
 #TARGETOS= win32
 NOWERROR = 1
 
-SUBTARGET = tiny
+#SUBTARGET = tiny
 
 CROSS_BUILD = 1
 
@@ -36,10 +36,11 @@ AARMV8=1
 
 #AX86=1
 
-#CLANG = 1
+CLANG = 1
+#NEWCLANG = 1
 
 #BUILDMYTOOLS = 1
-#para compilar las herramientas. make buildtools
+#para compilar las herramientas. hacer make buildtools
 ifdef BUILDMYTOOLS
 CROSS_BUILD =
 TARGETOS=win32
@@ -67,9 +68,10 @@ endif
 ifdef AARMV7
 PTR64 = 0
 #MYPREFIX=/home/david/Projects/android/my-android-toolchain-r10c-18/bin/arm-linux-androideabi-
-MYPREFIX=
 #MYPREFIX=/home/david/Projects/android/my-android-toolchain-r9-18/bin/
-BASE_DEV=/home/david/Projects/android/my-android-toolchain-r10c-18/sysroot
+MYPREFIX=/C/Android/toolchain-r17c-arm/bin/arm-linux-androideabi-
+
+#BASE_DEV=/home/david/Projects/android/my-android-toolchain-r10c-18/sysroot
 endif
 
 ifdef AARMV8
@@ -351,12 +353,15 @@ endif
 #AR = @/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android-ar
 
 ifdef CLANG
-#CC = @$(MYPREFIX)clang
-#LD = @$(MYPREFIX)clang++
-#AR = @$(MYPREFIX)ar
-CC = @$(MYPREFIX)27-clang
-LD = @$(MYPREFIX)27-clang++
+ifdef NEWCLANG
+CC = @$(MYPREFIX)clang
+LD = @$(MYPREFIX)clang++
+AR = @$(MYPREFIX)ar
+else
+CC = @$(MYPREFIX)22-clang
+LD = @$(MYPREFIX)22-clang++
 AR = @$(MYPREFIX)-ar
+endif
 else
 CC = @$(MYPREFIX)gcc
 LD = @$(MYPREFIX)g++
@@ -679,42 +684,55 @@ SOFTFLOAT = $(OBJ)/libsoftfloat.a
 HQX = $(OBJ)/libhqx.a
 
 ifdef ANDROID
+
 #CCOMFLAGS += --sysroot $(BASE_DEV) #si necesitamos meter el platform a pelo en lugar de toolchain
+
 CCOMFLAGS += -DANDROID
-CCOMFLAGS += -fpic
+CCOMFLAGS += -fPIC
+#CCOMFLAGS += -fpic
+CCOMFLAGS += -DLSB_FIRST
+CCOMFLAGS += -Wno-narrowing
 
 ifdef AARMV7
 #CCOMFLAGS += -fno-strict-aliasing
 ##CCOMFLAGS += -mno-unaligned-access
 CCOMFLAGS += -mthumb 
-CCOMFLAGS += -fPIC  -mthumb-interwork -fsigned-char -finline  
+#CCOMFLAGS += -mthumb-interwork #solo para ARMv6
+CCOMFLAGS += -fsigned-char -finline  
 CCOMFLAGS += -fno-common -fno-builtin 
 CCOMFLAGS += -fweb -frename-registers -fsingle-precision-constant
+CCOMFLAGS += -fno-merge-constants
+CCOMFLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -DARMV7
+CCOMFLAGS += -ffast-math
+
 #CCOMFLAGS += -mstructure-size-boundary=32 -falign-functions=16
 #CCOMFLAGS += -DALIGN_INTS -DALIGN_SHORTS 
-CCOMFLAGS += -DLSB_FIRST -fno-merge-constants
-CCOMFLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -DARMV7
 #CCOMFLAGS += -std=gnu99
 #CCOMFLAGS += -mfpu=neon
 #CCOMFLAGS += -pipe  -mtune=cortex-a9
-CCOMFLAGS += -Wno-unused-but-set-variable -Wno-narrowing
+#CCOMFLAGS +=  -fsched-spec-load -fmodulo-sched  -ftracer -funsafe-loop-optimizations -Wunsafe-loop-optimizations -fvariable-expansion-in-unroller
+
 LDFLAGS += -march=armv7-a -Wl,--fix-cortex-a8
-CCOMFLAGS += -ffast-math
+
 endif
 
 ifdef AARMV8
-CCOMFLAGS += -fPIC
-CCOMFLAGS += -DLSB_FIRST
 
-#CCOMFLAGS += -fsigned-char -finline
-#CCOMFLAGS += -fno-common -fno-builtin 
-#CCOMFLAGS += -fweb -frename-registers -fsingle-precision-constant
+CCOMFLAGS += -fsigned-char
+CCOMFLAGS += --signed-char
+
 #CCOMFLAGS += -fno-merge-constants
+#CCOMFLAGS += -fno-builtin 
+#CCOMFLAGS += -fsingle-precision-constant
+#-cl-single-precision-constant instead.
 
-CCOMFLAGS += -Wno-narrowing
-
-CCOMFLAGS += -march=armv8-a 
-CCOMFLAGS += -mtune=cortex-a53
+CCOMFLAGS += -march=armv8-a
+ifdef CLANG
+COMFLAGS += -mtune=cortex-a53
+else
+#shield tv --> TEGRA X1
+CCOMFLAGS += -mtune=cortex-a57.cortex-a53
+endif 
 
 #CCOMFLAGS += -stdlib=libstdc++
 
@@ -745,14 +763,13 @@ CCOMFLAGS += -Wno-shift-count-overflow
 CCOMFLAGS += -Wno-pointer-bool-conversion
 CCOMFLAGS += -Wno-int-to-pointer-cast
 CCOMFLAGS += -Wno-unused-private-field
+CCOMFLAGS += -Wno-ignored-optimization-argument
 else
 CCOMFLAGS += -Wno-unused-but-set-variable
 endif
 
 
 #GCC
-#CCOMFLAGS += -Wno-psabi 
-CCOMFLAGS += -Wno-sign-compare 
 
 LDFLAGS += -llog -lgcc -lOpenSLES
 LDFLAGS += -Wl,-soname,libMAME4droid.so -shared
@@ -760,25 +777,6 @@ LDFLAGS += -lc -lm
 #Activar para ver referencias no linkadas en GCC!
 #LDFLAGS += -Wl,--no-undefined 
 
-#CCOMFLAGS += -fsigned-char -finline  
-
-#CCOMFLAGS += -fno-common -fno-builtin
-
-#CCOMFLAGS += -Wno-sign-compare -Wunused -Wpointer-arith -Wcast-align -Waggregate-return -Wshadow
-
-#CCOMFLAGS += -ffast-math  -fsingle-precision-constant
-
-#CCOMFLAGS += -ffast-math
-
-#CCOMFLAGS += -falign-functions=16
-
-#CCOMFLAGS +=  -fsched-spec-load -fmodulo-sched  -ftracer -funsafe-loop-optimizations -Wunsafe-loop-optimizations -fvariable-expansion-in-unroller
-
-#CCOMFLAGS += -mstructure-size-boundary=32 -mthumb-interwork
-
-#CCOMFLAGS += -fexceptions -frtti
-#LDFLAGS +=  -lstdc++
-	
 endif
 
 #-------------------------------------------------

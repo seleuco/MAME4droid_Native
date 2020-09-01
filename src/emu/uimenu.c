@@ -4133,7 +4133,11 @@ static void menu_select_game_custom_render(running_machine *machine, ui_menu *me
 	#ifdef IOS
 			sprintf(&tempbuf[0][0], "MAME4iOS (0.139u1) 1.6 by David Valdeita (Seleuco). Game: %d/%d",MIN(myosd_last_game_selected+1,nroms), nroms);
 	#else
-			sprintf(&tempbuf[0][0], "MAME4droid (0.139u1) %s by David Valdeita (Seleuco). Game: %d/%d",myosd_version,MIN(myosd_last_game_selected+1,nroms), nroms);
+		#ifdef PTR64
+			sprintf(&tempbuf[0][0], "MAME4droid(0.139u1) %s-arm64 by David Valdeita (Seleuco).Game: %d/%d",myosd_version,MIN(myosd_last_game_selected+1,nroms), nroms);
+		#else
+			sprintf(&tempbuf[0][0], "MAME4droid(0.139u1) %s-arm32 by David Valdeita (Seleuco).Game: %d/%d",myosd_version,MIN(myosd_last_game_selected+1,nroms), nroms);
+		#endif
 	#endif
     }
     
