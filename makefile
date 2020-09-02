@@ -37,7 +37,7 @@ AARMV8=1
 #AX86=1
 
 CLANG = 1
-#NEWCLANG = 1
+NEWCLANG = 1
 
 #BUILDMYTOOLS = 1
 #para compilar las herramientas. hacer make buildtools
@@ -67,8 +67,6 @@ endif
 
 ifdef AARMV7
 PTR64 = 0
-#MYPREFIX=/home/david/Projects/android/my-android-toolchain-r10c-18/bin/arm-linux-androideabi-
-#MYPREFIX=/home/david/Projects/android/my-android-toolchain-r9-18/bin/
 MYPREFIX=/C/Android/toolchain-r17c-arm/bin/arm-linux-androideabi-
 
 #BASE_DEV=/home/david/Projects/android/my-android-toolchain-r10c-18/sysroot
@@ -77,13 +75,10 @@ endif
 ifdef AARMV8
 PTR64 = 1
 
-#MYPREFIX=/home/david/Projects/android/my-android-toolchain-r10c-21-arm64/bin/aarch64-linux-android-
-#MYPREFIX=/C/Android/my-android-toolchain-r10/bin/aarch64-linux-android-
-MYPREFIX=/C/Android/toolchain-r17c-arm64/bin/aarch64-linux-android-
-#MYPREFIX=/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android
+#MYPREFIX=/C/Android/toolchain-r17c-arm64/bin/aarch64-linux-android-
+MYPREFIX=/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/
 
 #BASE_DEV=/home/david/Projects/android/my-android-toolchain-r10c-21-arm64/sysroot
-#BASE_DEV=/C/Android/my-android-toolchain-r10/sysroot
 endif
 
 
@@ -349,24 +344,29 @@ endif
 
 # compiler, linker and utilities
 
-
-#AR = @/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android-ar
-
-ifdef CLANG
-ifdef NEWCLANG
-CC = @$(MYPREFIX)clang
-LD = @$(MYPREFIX)clang++
-AR = @$(MYPREFIX)ar
-else
-CC = @$(MYPREFIX)22-clang
-LD = @$(MYPREFIX)22-clang++
-AR = @$(MYPREFIX)-ar
-endif
-else
 CC = @$(MYPREFIX)gcc
 LD = @$(MYPREFIX)g++
 AR = @$(MYPREFIX)ar
+
+ifdef ANDROID
+ifdef CLANG
+CC = @$(MYPREFIX)clang
+LD = @$(MYPREFIX)clang++
+AR = @$(MYPREFIX)ar
+ifdef NEWCLANG
+ifdef AARMV7
+AR = @$(MYPREFIX)arm-linux-androideabi-ar
 endif
+ifdef AARMV8
+AR = @$(MYPREFIX)aarch64-linux-android-ar
+endif
+endif
+endif
+endif
+
+$(info CC --> $(CC))
+$(info LD --> $(LD))
+$(info AR --> $(AR))
 
 MD = -mkdir$(EXE)
 RM = @rm -f
@@ -687,13 +687,16 @@ ifdef ANDROID
 
 #CCOMFLAGS += --sysroot $(BASE_DEV) #si necesitamos meter el platform a pelo en lugar de toolchain
 
+
 CCOMFLAGS += -DANDROID
 CCOMFLAGS += -fPIC
+
 #CCOMFLAGS += -fpic
 CCOMFLAGS += -DLSB_FIRST
 CCOMFLAGS += -Wno-narrowing
 
 ifdef AARMV7
+
 #CCOMFLAGS += -fno-strict-aliasing
 ##CCOMFLAGS += -mno-unaligned-access
 CCOMFLAGS += -mthumb 
@@ -714,10 +717,16 @@ CCOMFLAGS += -ffast-math
 
 LDFLAGS += -march=armv7-a -Wl,--fix-cortex-a8
 
+ifdef NEWCLANG
+CCOMFLAGS += -target armv7a-linux-androideabi18
+LDFLAGS += -target armv7a-linux-androideabi18
+endif
+
 endif
 
 ifdef AARMV8
 
+#importantes para que funcion Xevius3d
 CCOMFLAGS += -fsigned-char
 CCOMFLAGS += --signed-char
 
@@ -735,13 +744,16 @@ CCOMFLAGS += -mtune=cortex-a57.cortex-a53
 endif 
 
 #CCOMFLAGS += -stdlib=libstdc++
-
 #LDFLAGS += -march=armv8-a 
+
+ifdef NEWCLANG
+CCOMFLAGS += -target aarch64-linux-android21
+LDFLAGS += -target aarch64-linux-android21
+endif
 
 endif
 
 #Para quitar warning de CLANG
-#NOTA: CLANG da problemas con los drivers de Nanco,namcos11c (Xevious 3d y tekken 1 y2). Usar GCC hasta revisar warnings!
 ifdef CLANG
 CCOMFLAGS += -Wno-sizeof-pointer-memaccess
 CCOMFLAGS += -Wno-constant-logical-operand
