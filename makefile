@@ -30,14 +30,14 @@ CROSS_BUILD = 1
 
 ANDROID = 1
 
-#AARMV7=1
+AARMV7=1
 
-AARMV8=1
+#AARMV8=1
 
 #AX86=1
 
-CLANG = 1
-NEWCLANG = 1
+#CLANG = 1
+#NEWCLANG = 1
 
 #BUILDMYTOOLS = 1
 #para compilar las herramientas. hacer make buildtools
@@ -717,6 +717,10 @@ CCOMFLAGS += -ffast-math
 
 LDFLAGS += -march=armv7-a -Wl,--fix-cortex-a8
 
+#https://stackoverflow.com/questions/27091001/how-to-use-mkfifo-using-androids-ndk/27093163#27093163
+#to run before api 21
+CCOMFLAGS += -D__ANDROID_API__=18
+
 ifdef NEWCLANG
 CCOMFLAGS += -target armv7a-linux-androideabi18
 LDFLAGS += -target armv7a-linux-androideabi18
@@ -788,6 +792,7 @@ LDFLAGS += -Wl,-soname,libMAME4droid.so -shared
 LDFLAGS += -lc -lm 
 #Activar para ver referencias no linkadas en GCC!
 #LDFLAGS += -Wl,--no-undefined 
+LDFLAGS += -static-libstdc++
 
 endif
 
