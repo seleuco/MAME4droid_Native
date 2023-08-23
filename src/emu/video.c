@@ -2144,7 +2144,10 @@ void screen_device::configure(int width, int height, const rectangle &visarea, a
     
         //DAV HACK
         if(refresh_hack)
-          frame_period = HZ_TO_ATTOSECONDS(myosd_refresh / 100.00f);
+		{
+          //frame_period = HZ_TO_ATTOSECONDS(myosd_refresh / 100.00f);
+	      frame_period = HZ_TO_ATTOSECONDS(myosd_refresh / 100.00);
+		}
         old_vsync=-1;
  
 	// fill in the new parameters

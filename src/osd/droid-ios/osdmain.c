@@ -206,6 +206,22 @@ int main(int argc, char **argv)
                 {
                    args[n]= (char *)"-rompath"; n++;args[n]=myosd_rompath; n++;
                 }
+								
+				if(myosd_savestatesinrompath)
+                {				   
+				   myosd_statepath[0]='\0';
+				   if(myosd_rompath[0]!='\0')
+				   {
+				      strcat(myosd_statepath, myosd_rompath);
+				      strcat(myosd_statepath, "/sta");
+				   }
+				   else
+				   {
+				      strcat(myosd_statepath, "roms/sta");				   
+				   }
+                   args[n]= (char *)"-state_directory"; n++;args[n]=myosd_statepath; n++;				   
+                }
+				
 
 		if(isGridlee){
 		    args[n]= (char *)"gridlee"; n++;

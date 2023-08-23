@@ -32,6 +32,8 @@
 #define PATHSEPCH '/'
 #define INVPATHSEPCH '\\'
 
+#include "myosd.h"
+
 
 static UINT32 create_path_recursive(char *path);
 
@@ -95,7 +97,7 @@ file_error osd_open(const char *path, UINT32 openflags, osd_file **file, UINT64 
 	file_error filerr = FILERR_NONE;
 
 #ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "mame4", "Leo %s",path);
+	//__android_log_print(ANDROID_LOG_INFO, "mame4", "Abro fichero %s",path);
 #endif
 
 	tmpstr = NULL;
@@ -113,7 +115,8 @@ file_error osd_open(const char *path, UINT32 openflags, osd_file **file, UINT64 
 	for (src = path; *src != 0; src++)
 		*dst++ = (*src == INVPATHSEPCH) ? PATHSEPCH : *src;
 	*dst++ = 0;
-
+	
+		
 	// select the file open modes
 	if (openflags & OPEN_FLAG_WRITE)
 	{
@@ -136,7 +139,7 @@ file_error osd_open(const char *path, UINT32 openflags, osd_file **file, UINT64 
     
 	tmpstr = (char *)malloc(strlen((*file)->filename)+1);
 	strcpy(tmpstr, (*file)->filename);
-
+	
 	// does path start with an environment variable?
 	if (tmpstr[0] == '$')
 	{
@@ -171,9 +174,71 @@ file_error osd_open(const char *path, UINT32 openflags, osd_file **file, UINT64 
 			fprintf(stderr, "Warning: Environment variable %s not found.\n", envstr);
 		free(envstr);
 	}
+	
+	(*file)->handle = -1;
+	
+	if(myosd_using_saf == 1)
+	{			
 
-	// attempt to open the file
-	(*file)->handle = open(tmpstr, access, 0666);
+		char *pathSaf;
+	    char *pathFileName = NULL;
+		char *tmp1str;
+		char *tmp2str;
+		
+		pathSaf = (char *)malloc(strlen(tmpstr)+1);
+
+		strcpy(pathSaf, tmpstr);
+		
+		tmp1str = pathSaf;
+		
+		int use_saf = 0;
+			
+		for(tmp1str = pathSaf, tmp2str = myosd_rompath; *tmp1str;tmp1str++,tmp2str++)
+		{			
+			if(*tmp2str==0)
+			{
+			   *tmp1str=0;
+			   pathFileName = tmp1str+1;
+			   use_saf = 1;
+			   break;
+			}
+			if(*tmp1str!=*tmp2str)
+				break;
+		}
+		
+		     					
+		if(use_saf && pathFileName != NULL)
+		{
+		   const char *mode = "r";
+		   if (openflags & OPEN_FLAG_WRITE)
+		   {
+			    mode = "w";
+			    if(openflags & OPEN_FLAG_READ)
+				{
+					// "rw" for read-and-write.
+                    // "rwt" for truncating or overwriting existing file contents.
+					mode = "rw";
+					if(openflags & OPEN_FLAG_CREATE)
+						mode = "rwt";
+				}
+				else if(openflags & OPEN_FLAG_CREATE)
+				{
+					mode = "wt";
+				}
+		   }
+			
+		   //__android_log_print(ANDROID_LOG_INFO, "mame4", "--->Abro fichero en SAF Path %s Nombre %s",pathSaf,pathFileName);
+		   (*file)->handle = myosd_safOpenFile(tmpstr, (char *)mode);
+		}
+        
+		free(pathSaf);		
+	}
+	
+	if ((*file)->handle == -1)	
+	{		   	  	 
+	   // attempt to open the file
+	   (*file)->handle = open(tmpstr, access, 0666);
+	}
 
 	if ((*file)->handle == -1)
 	{

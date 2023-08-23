@@ -1268,17 +1268,23 @@ static avi_error read_movie_data(avi_file *file)
 	/* find the hdrl LIST chunk within the RIFF */
 	avierr = find_first_list(file, LISTTYPE_HDRL, &riff, &hdrl);
 	if (avierr != AVIERR_NONE)
+	{
 		goto error;
+	}
 
 		/* find the avih chunk */
 		avierr = find_first_chunk(file, CHUNKTYPE_AVIH, &hdrl, &avih);
 		if (avierr != AVIERR_NONE)
+		{
 			goto error;
+		}
 
 		/* parse the avih chunk */
 		avierr = parse_avih_chunk(file, &avih);
 		if (avierr != AVIERR_NONE)
+		{
 			goto error;
+		}
 
 		/* loop over strl LIST chunks */
 		strindex = 0;

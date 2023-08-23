@@ -21,6 +21,12 @@
 
 #include "osdcore.h"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
+#include "myosd.h"
+
 struct _osd_directory
 {
 	osd_directory_entry ent;
@@ -28,6 +34,10 @@ struct _osd_directory
 	struct dirent *data;
 
 	DIR *fd;
+	
+	int safDirId;
+	
+	char buff[64];
 };
 
 
@@ -60,20 +70,43 @@ static UINT64 osd_get_file_size(const char *file)
 osd_directory *osd_opendir(const char *dirname)
 {
 	osd_directory *dir = NULL;
+	
+	//__android_log_print(ANDROID_LOG_INFO, "mame4", "Leido directorio %s",dirname);
 
 	dir = (osd_directory *) malloc(sizeof(osd_directory));
 	if (dir)
 	{
 		memset(dir, 0, sizeof(osd_directory));
 		dir->fd = NULL;
+		dir->safDirId = 0;
 	}
-
-	dir->fd = opendir(dirname);
-
-	if (dir && (dir->fd == NULL))
+	else
+	    return NULL;
+	
+	if(myosd_using_saf == 1 && strcmp(myosd_rompath,dirname) == 0)
 	{
-		free(dir);
-		dir = NULL;
+		//__android_log_print(ANDROID_LOG_INFO, "mame4", "USANDO SAF readdir....");
+		dir->safDirId = myosd_safReadDir((char*)dirname, myosd_reload);		          
+		//__android_log_print(ANDROID_LOG_INFO, "mame4", "myosd_safReadDir %d", dir->safDirId );
+		if(!dir->safDirId)
+		{
+			free(dir);
+			dir = NULL;
+		}
+		else
+		{
+			myosd_reload = 0;
+		}
+	}
+	else
+	{
+	   dir->fd = opendir(dirname);
+	   
+	   if (dir && (dir->fd == NULL))
+	   {
+		  free(dir);
+		  dir = NULL;
+	   }
 	}
 
 	return dir;
@@ -86,15 +119,40 @@ osd_directory *osd_opendir(const char *dirname)
 
 const osd_directory_entry *osd_readdir(osd_directory *dir)
 {
+	 //__android_log_print(ANDROID_LOG_INFO, "mame4", "osd_readdir");
 
-	dir->data = readdir(dir->fd);
+    if(dir->safDirId)
+	{	   
+	   char *entryName = myosd_safGetNextDirEntry(dir->safDirId);
+		
+	   if(entryName==NULL)			
+		   return NULL;
+		
+	   if(strlen(entryName)>64)//safety
+	       entryName[63]=0;
+		
+	   strcpy(dir->buff,entryName);
+	   free(entryName);
+	   
+	   dir->ent.name = dir->buff;
+	   dir->ent.type = ENTTYPE_FILE;
+	   dir->ent.size = 0;
 
-	if (dir->data == NULL)
-		return NULL;
+	   //__android_log_print(ANDROID_LOG_INFO, "mame4", "osd_readdir %s",dir->name);	  	   
+	}
+	else
+	{
+	   dir->data = readdir(dir->fd);
+	   
+	   if (dir->data == NULL)
+		  return NULL;
 
-	dir->ent.name = dir->data->d_name;
-	dir->ent.type = get_attributes_stat(dir->data->d_name);
-	dir->ent.size = osd_get_file_size(dir->data->d_name);
+	   dir->ent.name = dir->data->d_name;
+	   dir->ent.type = get_attributes_stat(dir->data->d_name);
+	   dir->ent.size = osd_get_file_size(dir->data->d_name);
+	}
+	
+
 	return &dir->ent;
 }
 
@@ -105,7 +163,17 @@ const osd_directory_entry *osd_readdir(osd_directory *dir)
 
 void osd_closedir(osd_directory *dir)
 {
-	if (dir->fd != NULL)
-		closedir(dir->fd);
+	  //__android_log_print(ANDROID_LOG_INFO, "mame4", "osd_closedir");
+     
+	 if(dir->safDirId)
+	 {
+	     myosd_safCloseDir(dir->safDirId);
+	 }
+	 else
+	 {
+	     if (dir->fd != NULL)
+		     closedir(dir->fd);
+	 }
+	
 	free(dir);
 }

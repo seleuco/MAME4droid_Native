@@ -1,3 +1,4 @@
 install mingw
-build from msys
+build from msys (cd /c/ to access C:)
 configure ndk in makefile (use gcc since clang makes some drivers fail)
+

@@ -623,7 +623,9 @@ static void start_handler(void *data, const char *tagname, const char **attribut
 						else if ( str_loadflag && !strcmp(str_loadflag, "fill") )
 						{
 							/* Handle 'fill' loadflag */
-							add_rom_entry( swlist, NULL, (const char*)atoi(str_value), offset, length, ROMENTRYTYPE_FILL );
+							//warnig a corregir
+							add_rom_entry( swlist, NULL, /*(const char*)atoi(str_value)*/(const char *)(FPTR)(strtol(str_value, NULL, 0) & 0xff), offset, length, ROMENTRYTYPE_FILL );
+							//add_rom_entry( swlist, NULL, (const char*)atoi(str_value), offset, length, ROMENTRYTYPE_FILL );
 						}
 						else
 						{

@@ -3622,11 +3622,18 @@ static void menu_crosshair_populate(running_machine *machine, ui_menu *menu)
 
 static void menu_quit_game(running_machine *machine, ui_menu *menu, void *parameter, void *state)
 {
+
+//// DAV HACK	
+    //__android_log_print(ANDROID_LOG_INFO, "mame4", "UI QUIT GAME -> RELOAD!");
+    myosd_reload = 1;
+//// DAV HACK
+	
 	/* request a reset */
 	machine->schedule_exit();
 
 	/* reset the menu stack */
 	ui_menu_stack_reset(machine);
+	
 }
 
 
@@ -3950,7 +3957,7 @@ static void menu_select_game_build_driver_list(ui_menu *menu, select_game_state 
 			char drivername[50];
 			char *dst = drivername;
 			const char *src;
-
+	 
 			/* build a name for it */
 			for (src = dir->name; *src != 0 && *src != '.' && dst < &drivername[ARRAY_LENGTH(drivername) - 1]; src++)
 				*dst++ = tolower((UINT8)*src);

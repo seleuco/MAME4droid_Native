@@ -361,7 +361,9 @@ bool legacy_image_device_base::load_internal(const char *path, bool is_create, i
     /* record the filename */
     m_err = set_image_filename(path);
     if (m_err)
+	{
         goto done;
+	}
 
 	/* Check if there's a software list defined for this device and use that if we're not creating an image */
 	softload = load_software_part( this, path, &m_software_info_ptr, &m_software_part_ptr, &m_full_software_name );

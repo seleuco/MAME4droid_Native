@@ -305,7 +305,9 @@ void running_machine::start()
     ///DAV HACK
     netplay_t *handle = netplay_get_handle();
     if(handle->has_connection)
+	{
         m_base_time = handle->basetime;
+	}
     //////
 
 	// intialize UI input
@@ -376,7 +378,9 @@ void running_machine::start()
     
     //MKCHAMP - INITIALIZING THE HISCORE ENGINE
     if (myosd_hiscore)
+	{
         hiscore_init(this);
+	}
 
 	// disallow save state registrations starting here
 	state_save_allow_registration(this, false);

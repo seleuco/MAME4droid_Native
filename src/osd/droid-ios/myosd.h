@@ -35,6 +35,7 @@ enum  { MYOSD_UP=0x1,       MYOSD_LEFT=0x4,       MYOSD_DOWN=0x10,  MYOSD_RIGHT=
 #define MAX_GAME_NAME 20
 #define NETPLAY_PORT 55435
 #define MAX_ROM_PATH 247
+#define MAX_STATE_PATH 247
         
 extern unsigned short *myosd_screen15;
 extern int  myosd_fps;
@@ -126,6 +127,10 @@ extern void myosd_closeSound(void);
 extern void myosd_openSound(int rate,int stereo);
 extern void myosd_sound_play(void *buff, int len);
 extern void myosd_check_pause(void);
+extern int myosd_safOpenFile(char* pathName, char *mode);
+extern int myosd_safReadDir(char *dirName,int reload);
+extern char *myosd_safGetNextDirEntry(int dirId);
+extern void myosd_safCloseDir(int dirId);
     
 extern const char *myosd_array_main_manufacturers[];
 extern const char *myosd_array_years[];
@@ -134,10 +139,15 @@ extern const char *myosd_array_categories[];
 
 extern char myosd_game[MAX_GAME_NAME];
 extern char myosd_rompath[MAX_ROM_PATH];
+extern char myosd_statepath[MAX_STATE_PATH];
 extern char myosd_version[16];
 extern char myosd_bios[16];
 
 extern char *myosd_category;
+
+extern int myosd_using_saf;
+extern int myosd_reload;
+extern int myosd_savestatesinrompath;
     
 #if defined(__cplusplus)
 }

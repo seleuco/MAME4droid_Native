@@ -373,16 +373,22 @@ zip_error zip_file_decompress(zip_file *zip, void *buffer, UINT32 length)
 
     /* if we don't have enough buffer, error */
     if (length < zip->header.uncompressed_length)
+	{
     	return ZIPERR_BUFFER_TOO_SMALL;
+	}
 
     /* make sure the info in the header aligns with what we know */
 	if (zip->header.start_disk_number != zip->ecd.disk_number)
+	{
 		return ZIPERR_UNSUPPORTED;
+	}
 
     /* get the compressed data offset */
     ziperr = get_compressed_data_offset(zip, &offset);
     if (ziperr != ZIPERR_NONE)
+	{
     	return ziperr;
+	}
 
     /* handle compression types */
     switch (zip->header.compression)

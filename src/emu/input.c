@@ -1155,12 +1155,16 @@ static int input_code_check_axis(running_machine *machine, input_device_item *it
     if ((INPUT_CODE_DEVCLASS(code) == DEVICE_CLASS_LIGHTGUN)
         && (INPUT_CODE_ITEMID(code) == ITEM_ID_XAXIS || INPUT_CODE_ITEMID(code) == ITEM_ID_YAXIS)
         && (curval == INPUT_ABSOLUTE_MAX || curval == INPUT_ABSOLUTE_MIN))
+	{
         return FALSE;
+	}
 
 	/* compute the diff against memory */
 	diff = curval - item->memory;
 	if (diff < 0)
+	{
 		diff = -diff;
+	}
 
 	/* for absolute axes, look for 25% of maximum */
 	if (item->itemclass == ITEM_CLASS_ABSOLUTE && diff > (INPUT_ABSOLUTE_MAX - INPUT_ABSOLUTE_MIN) / 4)

@@ -628,7 +628,9 @@ static DEVICE_STOP( discrete )
 	{
 		/* close the debug log */
 	    if (info->disclogfile)
+		{
 	    	fclose(info->disclogfile);
+		}
 		info->disclogfile = NULL;
 	}
 }

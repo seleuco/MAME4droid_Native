@@ -27,6 +27,8 @@
 //#include "ui.h"
 //#include "driver.h"
 
+#include <sys/stat.h> 
+
 int  myosd_fps = 1;
 int  myosd_showinfo = 1;
 int  myosd_sleep = 0;
@@ -117,10 +119,15 @@ unsigned short 	*myosd_screen15 = NULL;
 
 char myosd_game[MAX_GAME_NAME] = {'\0'};
 char myosd_rompath[MAX_ROM_PATH] = {'\0'};
+char myosd_statepath[MAX_STATE_PATH] = {'\0'};
 char myosd_version[16] = {'\0'};
 char myosd_bios[16] = {'\0'};
 
 char *myosd_category = NULL;
+
+int myosd_using_saf = 0;
+int myosd_reload = 1;
+int myosd_savestatesinrompath = 0;
 
 //////////////////////// android
 
@@ -154,6 +161,11 @@ void (*dumpSound_callback)(void *buffer,int size) = NULL;
 void (*closeSound_callback)(void) = NULL;
 
 void (*netplayWarn_callback)(char *) = NULL;
+
+int   (*safOpenFile_callback)(char *pathName, char *mode) = NULL;
+int   (*safReadDir_callback)(char *dirName,int reload) = NULL;
+char* (*safGetNextDirEntry_callback)(int dirId) = NULL;
+void  (*safCloseDir_callback)(int dirId) = NULL;
 
 #define PIXEL_PITCH ((myosd_rgb ? 4 : 2))
 
@@ -225,6 +237,23 @@ extern "C" void setNetplayCallbacks(void (*netplay_warn_java)(char *))
 #endif
     netplayWarn_callback = netplay_warn_java;
 }
+
+extern "C" void setSAFCallbacks(
+int (*safOpenFile_java)(char*, char*),
+int (*safReadDir_java)(char *, int reload),
+char* (*safGetNextDirEntry_java)(int),
+void (*safCloseDir_java)(int)
+)
+{
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_DEBUG, "libMAME4droid.so", "setSAFCallbacks");
+#endif
+    safOpenFile_callback = safOpenFile_java;
+	safReadDir_callback = safReadDir_java;
+	safGetNextDirEntry_callback = safGetNextDirEntry_java;
+	safCloseDir_callback = safCloseDir_java;
+}
+
 
 extern "C"
 void setPadStatus(int i, unsigned long pad_status)
@@ -339,7 +368,8 @@ void setMyValue(int key,int i, int value){
             case 49:
                 {  
                     if(myosd_sound_value!=-1 && sound_engine == 2)
-                        myosd_sound_value = value;break;
+                        myosd_sound_value = value;
+					break;
                 }
             case 50:
                 sound_engine = value;break;
@@ -389,6 +419,10 @@ void setMyValue(int key,int i, int value){
                  myosd_mouse = value;break; 
             case 61:                 
                  myosd_refresh = value;break; 
+	        case 62:                 
+                 myosd_using_saf = value;break;
+            case 63:				 
+                 myosd_savestatesinrompath = value;break;
          }
 }
 
@@ -853,3 +887,30 @@ void myosd_check_pause(void){
         myosd_pause = 0;
 	pthread_mutex_unlock( &cond_mutex );
 }
+
+
+int myosd_safOpenFile(char *pathName, char *mode){
+	if(safOpenFile_callback!=NULL)
+       return safOpenFile_callback(pathName, mode);
+   return -1;
+}
+
+int myosd_safReadDir(char *dirName,int reload){
+	if(safReadDir_callback!=NULL)
+       return safReadDir_callback(dirName,reload);
+   return 0;
+}
+
+char *myosd_safGetNextDirEntry(int id){
+	if(safGetNextDirEntry_callback!=NULL)
+       return safGetNextDirEntry_callback(id);
+   return NULL;
+}
+
+void myosd_safCloseDir(int id){
+	if(safCloseDir_callback!=NULL)
+       safCloseDir_callback(id);
+}
+
+
+

@@ -840,7 +840,9 @@ static png_error write_deflated_chunk(core_file *fp, UINT8 *data, UINT32 type, U
 	stream.avail_in = length;
     zerr = deflateInit(&stream, Z_BEST_COMPRESSION);
     if (zerr != Z_OK)
+	{
     	return PNGERR_COMPRESS_ERROR;
+	}
 
 	/* now loop until we run out of data */
 	for ( ; ; )

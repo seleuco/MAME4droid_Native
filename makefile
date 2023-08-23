@@ -36,8 +36,8 @@ AARMV7=1
 
 #AX86=1
 
-#CLANG = 1
-#NEWCLANG = 1
+CLANG = 1
+NEWCLANG = 1
 
 #BUILDMYTOOLS = 1
 #para compilar las herramientas. hacer make buildtools
@@ -76,7 +76,12 @@ ifdef AARMV8
 PTR64 = 1
 
 #MYPREFIX=/C/Android/toolchain-r17c-arm64/bin/aarch64-linux-android-
-MYPREFIX=/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/
+#MYPREFIX=/C/Android/android-ndk-r21b/toolchains/llvm/prebuilt/windows-x86_64/bin/
+MYPREFIX=/C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/windows-x86_64/bin/
+#estos NDK dan seg fault si se optimiza. Probar a meter sys root si son necesarios.
+#MYPREFIX=/C/Android/android-ndk-r23c/toolchains/llvm/prebuilt/windows-x86_64/bin/
+#MYPREFIX=/C/Android/android-ndk-r24/toolchains/llvm/prebuilt/windows-x86_64/bin/
+#MYPREFIX=/C/Android/android-ndk-r25c/toolchains/llvm/prebuilt/windows-x86_64/bin/
 
 #BASE_DEV=/home/david/Projects/android/my-android-toolchain-r10c-21-arm64/sysroot
 endif
@@ -293,6 +298,7 @@ BUILD_EXPAT = 1
 # specify a default optimization level if none explicitly stated
 ifndef OPTIMIZE
 ifndef SYMBOLS
+#OPTIMIZE = 3 CUIDADO LO HE QUITADO PARA PROBAR
 OPTIMIZE = 3
 else
 OPTIMIZE = 0
@@ -355,10 +361,12 @@ LD = @$(MYPREFIX)clang++
 AR = @$(MYPREFIX)ar
 ifdef NEWCLANG
 ifdef AARMV7
-AR = @$(MYPREFIX)arm-linux-androideabi-ar
+#AR = @$(MYPREFIX)arm-linux-androideabi-ar
+AR = @$(MYPREFIX)ar.exe
 endif
 ifdef AARMV8
-AR = @$(MYPREFIX)aarch64-linux-android-ar
+#AR = @$(MYPREFIX)aarch64-linux-android-ar
+AR = @$(MYPREFIX)llvm-ar.exe
 endif
 endif
 endif
@@ -499,6 +507,7 @@ CFLAGS = $(CCOMFLAGS) $(CPPONLYFLAGS)
 #CONLYFLAGS += -std=gnu89
 CONLYFLAGS += -std=gnu99
 CPPONLYFLAGS += -x c++ -std=gnu++98
+
 #COBJFLAGS += -x objective-c++
 COBJFLAGS += -x objective-c
 
@@ -687,7 +696,6 @@ ifdef ANDROID
 
 #CCOMFLAGS += --sysroot $(BASE_DEV) #si necesitamos meter el platform a pelo en lugar de toolchain
 
-
 CCOMFLAGS += -DANDROID
 CCOMFLAGS += -fPIC
 
@@ -717,13 +725,17 @@ CCOMFLAGS += -ffast-math
 
 LDFLAGS += -march=armv7-a -Wl,--fix-cortex-a8
 
+ifndef AARMV8
 #https://stackoverflow.com/questions/27091001/how-to-use-mkfifo-using-androids-ndk/27093163#27093163
 #to run before api 21
 CCOMFLAGS += -D__ANDROID_API__=18
+endif
 
 ifdef NEWCLANG
+ifndef AARMV8
 CCOMFLAGS += -target armv7a-linux-androideabi18
-LDFLAGS += -target armv7a-linux-androideabi18
+LDFLAGS += -target armv7a-linux-androideabi18 
+endif
 endif
 
 endif
@@ -739,7 +751,18 @@ CCOMFLAGS += --signed-char
 #CCOMFLAGS += -fsingle-precision-constant
 #-cl-single-precision-constant instead.
 
+
+#con ndk > r21 me falla las optmizaiones o1
+#meto optimizacions a pelo para probar
+
+#01
+
+#02
+
+
+
 CCOMFLAGS += -march=armv8-a
+
 ifdef CLANG
 COMFLAGS += -mtune=cortex-a53
 else
@@ -777,17 +800,45 @@ CCOMFLAGS += -Wno-constant-conversion
 CCOMFLAGS += -Wno-overloaded-virtual
 CCOMFLAGS += -Wno-shift-count-overflow
 CCOMFLAGS += -Wno-pointer-bool-conversion
-CCOMFLAGS += -Wno-int-to-pointer-cast
 CCOMFLAGS += -Wno-unused-private-field
 CCOMFLAGS += -Wno-ignored-optimization-argument
+CCOMFLAGS += -Wno-misleading-indentation
+CCOMFLAGS += -Wno-int-in-bool-context
+CCOMFLAGS += -Wno-unused-but-set-variable
+CCOMFLAGS += -Wno-unknown-warning-option
+
+#CCOMFLAGS += -Wno-int-to-pointer-cast
+
+#buscar errores que dan problemas segun ndk
+#CCOMFLAGS += -Werror=return-type -Werror=int-to-pointer-cast -Werror=pointer-to-int-cast -Werror=implicit-function-declaration
+#CCOMFLAGS += -Wreturn-type -Wint-to-pointer-cast -Wpointer-to-int-cast -Wimplicit-function-declaration
+
+#medidas de fortificacion para android
+#CCOMFLAGS += -fstack-protector-strong
+#CCOMFLAGS += -D_FORTIFY_SOURCE=2
+
+#prueba para quitar optimizaciones
+#CCOMFLAGS += -fslp-vectorize
+#CCOMFLAGS += -finline-functions
+#CCOMFLAGS +=  -freroll-loops
+#CCOMFLAGS +=  -funroll-loops
+#CCOMFLAGS +=  -funwind-tables
+#CCOMFLAGS +=  -fvectorize
+
 else
 CCOMFLAGS += -Wno-unused-but-set-variable
 endif
 
 
 #GCC
-
+ifdef AARMV8
+#LDFLAGS += -llog -lunwind -lOpenSLES
+#LDFLAGS += -llog -lOpenSLES
 LDFLAGS += -llog -lgcc -lOpenSLES
+else
+LDFLAGS += -llog -lgcc -lOpenSLES
+endif
+
 LDFLAGS += -Wl,-soname,libMAME4droid.so -shared
 LDFLAGS += -lc -lm 
 #Activar para ver referencias no linkadas en GCC!
@@ -938,7 +989,8 @@ endif
 
 endif
 
-
+# -mllvm -help-list-hidden 
+#-O1 -mllvm -debug-pass=Arguments -mllvm -disable-llvm-optzns
 
 #-------------------------------------------------
 # generic rules
